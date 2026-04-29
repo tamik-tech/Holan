@@ -103,20 +103,15 @@
 
     // Создание графика
     const ctx = document.getElementById('yieldChart').getContext('2d');
-    const yieldChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['Май', 'Июнь', 'Июль', 'Авг', 'Прогноз'],
-        datasets: [{
-          data: [40, 90, 140, 165, 185],
-          borderColor: '#00FF85',
-          borderWidth: 3,
-          backgroundColor: 'rgba(0, 255, 133, 0.05)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 4,
-          pointBackgroundColor: '#00FF85'
-        }]
+   scales: {
+  y: { 
+    min: 0, 
+    max: 50, // Максимум 50, чтобы график 40 ц/га смотрелся солидно
+    grid: { color: 'rgba(255,255,255,0.05)' }, 
+    ticks: { color: '#555' } 
+  },
+  x: { grid: { display: false }, ticks: { color: '#555' } }
+
       },
       options: {
         responsive: true,
@@ -129,41 +124,48 @@
       }
     });
 
-    function updateDashboard() {
-      // Получаем значения
-      const temp = parseFloat(document.getElementById('inputTemp').value);
-      const hum = parseFloat(document.getElementById('inputHum').value);
-      const nitro = parseFloat(document.getElementById('inputNitro').value);
+   function updateDashboard() {
+  // Получаем значения из ползунков
+  const temp = parseFloat(document.getElementById('inputTemp').value);
+  const hum = parseFloat(document.getElementById('inputHum').value);
+  const nitro = parseFloat(document.getElementById('inputNitro').value);
 
-      // Обновляем текст под ползунками
-      document.getElementById('lblTemp').innerText = temp + '°C';
-      document.getElementById('lblHum').innerText = hum + '%';
-      document.getElementById('lblNitro').innerText = nitro + '%';
+  // Обновляем текстовые значения под ползунками
+  document.getElementById('lblTemp').innerText = temp + '°C';
+  document.getElementById('lblHum').innerText = hum + '%';
+  document.getElementById('lblNitro').innerText = nitro + '%';
 
-      // Математика (Расчет в Центнерах)
-      let kTemp = 1.0 - Math.abs(24 - temp) * 0.035;
-      let kHum = 1.0 - Math.abs(65 - hum) * 0.015;
-      let result = (nitro * 3.8) * kTemp * kHum; // 3.8 — коэффициент для ц/га
-      
-      result = Math.max(5, Math.min(400, result)); // Лимиты
+  // --- МАТЕМАТИЧЕСКАЯ МОДЕЛЬ ---
+  // Идеальные условия: Температура 24°C, Влажность 65%
+  let kTemp = 1.0 - Math.abs(24 - temp) * 0.03;
+  let kHum = 1.0 - Math.abs(65 - hum) * 0.015;
+  
+  // Базовый расчет: если Азот 100% и условия идеальны (k=1), будет 40 ц/га
+  // Формула: (Азот * 0.4) * коэффициенты
+  let result = (nitro * 0.4) * kTemp * kHum;
+  
+  // Ограничиваем, чтобы не уходило в минус и не превышало 40
+  result = Math.max(0, Math.min(40, result));
 
-      // Вывод на экран
-      document.getElementById('yieldDisplay').innerHTML = Math.round(result) + ' <span class="text-xl font-normal text-white/20 uppercase">ц/га</span>';
-      
-      // Обновление графика (последняя точка)
-      yieldChart.data.datasets[0].data[4] = Math.round(result);
-      yieldChart.data.datasets[0].data[3] = Math.round(result * 0.88);
-      yieldChart.update('none');
+  // --- ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ---
+  const display = document.getElementById('yieldDisplay');
+  display.innerHTML = result.toFixed(1) + ' <span class="text-xl font-normal text-white/20 uppercase">ц/га</span>';
+  
+  // Обновляем точки на графике
+  yieldChart.data.datasets[0].data[4] = parseFloat(result.toFixed(1)); // Прогноз
+  yieldChart.data.datasets[0].data[3] = parseFloat((result * 0.9).toFixed(1)); // Август
+  yieldChart.update('none');
 
-      // Статус и эффективность
-      let eff = Math.round(Math.max(0, (kTemp * kHum) * 100));
-      document.getElementById('effVal').innerText = eff + '%';
-      
-      const status = document.getElementById('statusVal');
-      if (eff > 80) { status.innerText = "Optimal"; status.className = "text-xl font-bold text-mint"; }
-      else if (eff > 50) { status.innerText = "Normal"; status.className = "text-xl font-bold text-yellow-500"; }
-      else { status.innerText = "Risk"; status.className = "text-xl font-bold text-red-500"; }
-    }
+  // Расчет эффективности
+  let eff = Math.round(Math.max(0, (kTemp * kHum) * 100));
+  document.getElementById('effVal').innerText = eff + '%';
+  
+  // Цвет статуса
+  const status = document.getElementById('statusVal');
+  if (eff > 80) { status.innerText = "Optimal"; status.className = "text-xl font-bold text-mint"; }
+  else if (eff > 50) { status.innerText = "Normal"; status.className = "text-xl font-bold text-yellow-500"; }
+  else { status.innerText = "Risk"; status.className = "text-xl font-bold text-red-500"; }
+}
 
     // Первый запуск при загрузке
     window.onload = updateDashboard;
