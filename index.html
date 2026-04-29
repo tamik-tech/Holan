@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Holo — AI-агент для прозрачности агросектора. Мониторинг, NDVI-аналитика и умный календарь Plandate на базе Gemini и C# .NET." />
+  <title>Plandate · Holo AI</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Google Fonts: Syne (display) + DM Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+
+  <script>
+    // Tailwind custom config
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#050505',
+            mint: '#00FF85',
+            'mint-dim': '#00cc6a',
+            'glass-border': 'rgba(0,255,133,0.15)',
+          },
+          fontFamily: {
+            display: ['Syne', 'sans-serif'],
+            body: ['DM Sans', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ─── Base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: #050505;
+      font-family: 'DM Sans', sans-serif;
+      color: #e8ede9;
+      overflow-x: hidden;
+    }
+
+    /* ─── Noise grain overlay ───────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+
+    /* ─── Radial background glows ───────────────────── */
+    .bg-glow-top {
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse at center, rgba(0,255,133,0.07) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .bg-glow-bottom {
+      position: fixed;
+      bottom: -300px;
+      right: -200px;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(ellipse at center, rgba(0,180,90,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Glassmorphism card ────────────────────────── */
+    .glass {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(0,255,133,0.12);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px;
+      transition: border-color 0.3s, background 0.3s, transform 0.3s;
+    }
+    .glass:hover {
+      border-color: rgba(0,255,133,0.30);
+      background: rgba(0,255,133,0.04);
+      transform: translateY(-3px);
+    }
+
+    /* ─── Animated fade-in on load ──────────────────── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 0.8s ease forwards;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Staggered delays */
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    .delay-500 { animation-delay: 0.5s; }
+    .delay-600 { animation-delay: 0.6s; }
+    .delay-700 { animation-delay: 0.7s; }
+    .delay-800 { animation-delay: 0.8s; }
+    .delay-900 { animation-delay: 0.9s; }
+
+    /* ─── Pulsing Telegram button ───────────────────── */
+    .btn-tg {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #00FF85;
+      color: #050505;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.02em;
+      padding: 18px 40px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.25s, transform 0.2s, box-shadow 0.25s;
+      box-shadow: 0 0 30px rgba(0,255,133,0.35), 0 0 80px rgba(0,255,133,0.12);
+    }
+    .btn-tg:hover {
+      background: #00e877;
+      transform: scale(1.04);
+      box-shadow: 0 0 50px rgba(0,255,133,0.55), 0 0 120px rgba(0,255,133,0.2);
+    }
+    /* Pulsing ring */
+    .btn-tg::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 100px;
+      border: 2px solid rgba(0,255,133,0.5);
+      animation: pulseRing 2s ease-in-out infinite;
+    }
+    @keyframes pulseRing {
+      0%   { transform: scale(1);   opacity: 0.7; }
+      50%  { transform: scale(1.06); opacity: 0.2; }
+      100% { transform: scale(1);   opacity: 0.7; }
+    }
+
+    /* ─── Header launch button ──────────────────────── */
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 22px;
+      border: 1px solid rgba(0,255,133,0.35);
+      border-radius: 100px;
+      color: #00FF85;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-outline:hover {
+      background: rgba(0,255,133,0.08);
+      border-color: rgba(0,255,133,0.6);
+    }
+
+    /* ─── Accent text ────────────────────────────────── */
+    .text-mint { color: #00FF85; }
+
+    /* ─── Bento grid ─────────────────────────────────── */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 900px) {
+      .bento-grid { grid-template-columns: 1fr 1fr; }
+      .bento-wide { grid-column: span 2; }
+    }
+    @media (max-width: 580px) {
+      .bento-grid { grid-template-columns: 1fr; }
+      .bento-wide { grid-column: span 1; }
+    }
+
+    /* ─── Tech badge ─────────────────────────────────── */
+    .tech-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      border: 1px solid rgba(0,255,133,0.2);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.65);
+      background: rgba(255,255,255,0.03);
+    }
+
+    /* ─── Scrollbar ──────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #050505; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,255,133,0.25); border-radius: 3px; }
+
+    /* ─── Divider line ───────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(0,255,133,0.15), transparent);
+    }
+
+    /* ─── Hero number stat ───────────────────────────── */
+    .stat-number {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #00FF85;
+      line-height: 1;
+    }
+
+    /* ─── Card icon ring ─────────────────────────────── */
+    .icon-ring {
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      background: rgba(0,255,133,0.08);
+      border: 1px solid rgba(0,255,133,0.2);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+
+<body class="relative">
+
+  <!-- Background atmosphere -->
+  <div class="bg-glow-top"></div>
+  <div class="bg-glow-bottom"></div>
+
+  <!-- ════════════════════════════════════════════
+       HEADER
+  ════════════════════════════════════════════ -->
+  <header class="relative z-10 fade-in">
+    <div class="max-w-6xl mx-auto px-5 py-5 flex items-center justify-between">
+
+      <!-- Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+             style="background: linear-gradient(135deg,#00FF85 0%,#00a855 100%);">
+          <i data-lucide="leaf" class="text-obsidian" style="width:18px;height:18px;color:#050505;"></i>
+        </div>
+        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.15rem;letter-spacing:0.04em;">
+          Plan<span class="text-mint">date</span>
+        </span>
+      </div>
+
+      <!-- Nav links (hidden on mobile) -->
+      <nav class="hidden md:flex items-center gap-7 text-sm" style="color:rgba(255,255,255,0.5);">
+  <a href="index.html" class="text-white font-semibold">Главная</a>
+  
+  <a href="dashboard.html" class="hover:text-white transition-colors">Аналитика</a>
+  
+  <a href="#contact" class="hover:text-white transition-colors">Контакты</a>
+</nav>
+
+      <!-- CTA -->
+      <a href="https://t.me/holonobot" target="_blank" rel="noopener" class="btn-outline">
+        <i data-lucide="send" style="width:14px;height:14px;"></i>
+        Launch App
+      </a>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════
+       HERO
+  ════════════════════════════════════════════ -->
+  <section class="relative z-10 max-w-6xl mx-auto px-5 pt-16 pb-24 text-center">
+
+    
+    <!-- Main headline -->
+    <h1 class="fade-in delay-200"
+        style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.1;letter-spacing:-0.02em;margin-bottom:1.2rem;">
+      PlanDate<br/>
+      <span class="text-mint">вашего урожая</span>
+    </h1>
+
+    <!-- Subheadline -->
+    <p class="fade-in delay-300 mx-auto mb-12 leading-relaxed"
+       style="max-width:580px;font-size:1.1rem;color:rgba(255,255,255,0.55);">
+      AI-агент, который выявляет недобросовестное предпринимательство в агросекторе,
+      строит NDVI-карты и планирует сезон — всё в одном Telegram-боте.
+    </p>
+
+    <!-- Primary CTA -->
+    <div class="fade-in delay-400 flex justify-center">
+      <a href="https://t.me/holonobot" target="_blank" rel="noopener" class="btn-tg">
+        <i data-lucide="send" style="width:20px;height:20px;color:#050505;"></i>
+        Запустить @holonobot
+      </a>
+    </div>
+
+    <!-- Stats row -->
+    <div class="fade-in delay-500 mt-16 flex flex-wrap justify-center gap-10">
+      <div>
+        <div class="stat-number">98%</div>
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:4px;">Точность детекции фрода</div>
+      </div>
+      <div class="divider hidden md:block" style="width:1px;height:40px;background:rgba(255,255,255,0.1);"></div>
+      <div>
+        <div class="stat-number">14 мс</div>
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:4px;">Среднее время ответа</div>
+      </div>
+      <div class="divider hidden md:block" style="width:1px;height:40px;background:rgba(255,255,255,0.1);"></div>
+      <div>
+        <div class="stat-number">24/7</div>
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:4px;">Мониторинг полей</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════
+       BENTO GRID — FEATURES
+  ════════════════════════════════════════════ -->
+  <section id="features" class="relative z-10 max-w-6xl mx-auto px-5 pb-24">
+
+    <div class="text-center mb-12 fade-in delay-200">
+      <p class="text-xs uppercase tracking-widest text-mint mb-3">Возможности</p>
+      <h2 style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.8rem,4vw,2.6rem);">
+        Инструменты, которые<br/>меняют правила игры
+      </h2>
+    </div>
+
+    <div class="bento-grid">
+
+      <!-- Card 1 — Anti-fraud (wide) -->
+      <div class="glass p-8 bento-wide fade-in delay-300" style="min-height:220px;">
+        <div class="flex items-start gap-5 mb-6">
+          <div class="icon-ring">
+            <i data-lucide="shield-alert" class="text-mint" style="width:22px;height:22px;color:#00FF85;"></i>
+          </div>
+          <div>
+            <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem;margin-bottom:6px;">
+              Анти-фрод мониторинг
+            </h3>
+            <p style="font-size:0.9rem;color:rgba(255,255,255,0.5);line-height:1.6;">
+              Holo сканирует цепочки поставок, сверяет декларации с реальными данными NDVI
+              и сигнализирует о подозрительных паттернах ещё до нанесения ущерба.
+            </p>
+          </div>
+        </div>
+        <!-- Mini feature list -->
+        <div class="flex flex-wrap gap-3 mt-2">
+          <span class="tech-badge"><i data-lucide="check-circle-2" style="width:13px;height:13px;color:#00FF85;"></i>Проверка деклараций</span>
+          <span class="tech-badge"><i data-lucide="check-circle-2" style="width:13px;height:13px;color:#00FF85;"></i>Аномалии в реестрах</span>
+          <span class="tech-badge"><i data-lucide="check-circle-2" style="width:13px;height:13px;color:#00FF85;"></i>Алерты в Telegram</span>
+        </div>
+      </div>
+
+      <!-- Card 2 — NDVI -->
+      <div class="glass p-8 fade-in delay-400" style="min-height:220px;">
+        <div class="icon-ring mb-5">
+          <i data-lucide="satellite-dish" class="text-mint" style="width:22px;height:22px;color:#00FF85;"></i>
+        </div>
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.15rem;margin-bottom:8px;">
+          NDVI аналитика
+        </h3>
+        <p style="font-size:0.88rem;color:rgba(255,255,255,0.5);line-height:1.6;">
+          Спутниковые индексы вегетации в реальном времени. Определяем здоровье посевов,
+          стресс от засухи и вредителей до визуального проявления.
+        </p>
+        <div class="mt-6 rounded-xl overflow-hidden" style="background:rgba(0,255,133,0.05);padding:14px;border:1px solid rgba(0,255,133,0.1);">
+          <div class="flex justify-between items-center mb-2" style="font-size:0.75rem;color:rgba(255,255,255,0.35);">
+            <span>Поле А-7 · Сейчас</span><span class="text-mint">NDVI 0.72</span>
+          </div>
+          <!-- Fake mini bar chart -->
+          <div class="flex items-end gap-1" style="height:36px;">
+            <div style="flex:1;background:rgba(0,255,133,0.3);height:50%;border-radius:3px;"></div>
+            <div style="flex:1;background:rgba(0,255,133,0.5);height:65%;border-radius:3px;"></div>
+            <div style="flex:1;background:rgba(0,255,133,0.7);height:80%;border-radius:3px;"></div>
+            <div style="flex:1;background:rgba(0,255,133,0.9);height:100%;border-radius:3px;"></div>
+            <div style="flex:1;background:rgba(0,255,133,0.75);height:88%;border-radius:3px;"></div>
+            <div style="flex:1;background:rgba(0,255,133,0.85);height:95%;border-radius:3px;"></div>
+            <div style="flex:1;background:#00FF85;height:72%;border-radius:3px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 — Smart calendar -->
+      <div class="glass p-8 fade-in delay-500" style="min-height:220px;">
+        <div class="icon-ring mb-5">
+          <i data-lucide="calendar-check-2" class="text-mint" style="width:22px;height:22px;color:#00FF85;"></i>
+        </div>
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.15rem;margin-bottom:8px;">
+          Умный календарь Plandate
+        </h3>
+        <p style="font-size:0.88rem;color:rgba(255,255,255,0.5);line-height:1.6;">
+          Gemini строит оптимальный сезонный план: посев, полив, обработка, сбор урожая —
+          с учётом погоды, почвы и агрорынка.
+        </p>
+        <!-- Mini task list -->
+        <ul class="mt-5 space-y-2">
+          <li class="flex items-center gap-3" style="font-size:0.82rem;color:rgba(255,255,255,0.5);">
+            <span class="w-4 h-4 rounded-full bg-mint flex-shrink-0 flex items-center justify-center" style="background:rgba(0,255,133,0.15);border:1px solid rgba(0,255,133,0.4);">
+              <i data-lucide="check" style="width:10px;height:10px;color:#00FF85;"></i>
+            </span>
+            Посев пшеницы — 3 мая
+          </li>
+          <li class="flex items-center gap-3" style="font-size:0.82rem;color:rgba(255,255,255,0.5);">
+            <span class="w-4 h-4 rounded-full flex-shrink-0" style="background:rgba(0,255,133,0.08);border:1px solid rgba(0,255,133,0.25);">
+            </span>
+            Обработка фунгицидом — 18 мая
+          </li>
+          <li class="flex items-center gap-3" style="font-size:0.82rem;color:rgba(255,255,255,0.5);">
+            <span class="w-4 h-4 rounded-full flex-shrink-0" style="background:rgba(0,255,133,0.08);border:1px solid rgba(0,255,133,0.25);">
+            </span>
+            Прогноз уборки — 12 августа
+          </li>
+        </ul>
+      </div>
+
+    </div><!-- /bento-grid -->
+  </section>
+
+  <!-- ════════════════════════════════════════════
+       TECH SPECS
+  ════════════════════════════════════════════ -->
+  <section id="tech" class="relative z-10 max-w-6xl mx-auto px-5 pb-24">
+
+    <div class="glass p-10 md:p-14 fade-in delay-300"
+         style="background:rgba(0,255,133,0.025);">
+
+      <div class="flex flex-col md:flex-row gap-10 items-start">
+
+        <!-- Left text -->
+        <div class="flex-1">
+          <p class="text-xs uppercase tracking-widest text-mint mb-4">Технологический стек</p>
+          <h2 style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.5rem,3.5vw,2.2rem);line-height:1.2;margin-bottom:1rem;">
+            Серьёзная инженерия<br/>за простым интерфейсом
+          </h2>
+          <p style="font-size:0.95rem;color:rgba(255,255,255,0.5);line-height:1.7;max-width:440px;">
+            Holo работает на продакшн-стеке: высокопроизводительный бэкенд на C# .NET,
+            нейросетевые инсайты от Google Gemini и надёжная инфраструктура облачного хранения.
+          </p>
+        </div>
+
+        <!-- Right badges -->
+        <div class="flex-1 grid grid-cols-2 gap-4">
+
+          <div class="glass p-5" style="border-radius:16px;">
+            <div class="icon-ring mb-4" style="background:rgba(88,101,242,0.12);border-color:rgba(88,101,242,0.25);">
+              <i data-lucide="cpu" style="width:20px;height:20px;color:#7b8cde;"></i>
+            </div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:4px;">C# .NET 8</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);">Высокопроизводительный backend-сервис</div>
+          </div>
+
+          <div class="glass p-5" style="border-radius:16px;">
+            <div class="icon-ring mb-4" style="background:rgba(66,133,244,0.12);border-color:rgba(66,133,244,0.25);">
+              <i data-lucide="sparkles" style="width:20px;height:20px;color:#4285f4;"></i>
+            </div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:4px;">Google Gemini</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);">Мультимодальный AI — текст, карты, данные</div>
+          </div>
+
+          <div class="glass p-5" style="border-radius:16px;">
+            <div class="icon-ring mb-4" style="background:rgba(0,136,204,0.12);border-color:rgba(0,136,204,0.25);">
+              <i data-lucide="send" style="width:20px;height:20px;color:#08c;"></i>
+            </div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:4px;">Telegram Bot API</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);">Мгновенный доступ без установки приложений</div>
+          </div>
+
+          <div class="glass p-5" style="border-radius:16px;">
+            <div class="icon-ring mb-4" style="background:rgba(0,255,133,0.08);border-color:rgba(0,255,133,0.2);">
+              <i data-lucide="satellite" style="width:20px;height:20px;color:#00FF85;"></i>
+            </div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:4px;">Sentinel-2 / ESA</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);">Спутниковые NDVI-снимки каждые 5 дней</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════
+       SECONDARY CTA BANNER
+  ════════════════════════════════════════════ -->
+  <section class="relative z-10 max-w-6xl mx-auto px-5 pb-28">
+    <div class="glass text-center p-14 fade-in delay-200"
+         style="background:linear-gradient(135deg,rgba(0,255,133,0.06) 0%,rgba(0,80,40,0.08) 100%);">
+      <p class="text-xs uppercase tracking-widest text-mint mb-5">Начните прямо сейчас</p>
+      <h2 style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.6rem,4vw,2.4rem);margin-bottom:1rem;">
+        Ваш агробизнес заслуживает<br/>честной аналитики
+      </h2>
+      <p style="color:rgba(255,255,255,0.45);margin-bottom:2.5rem;font-size:0.95rem;">
+        Подключитесь к Holo бесплатно — данные готовы через 30 секунд.
+      </p>
+      <a href="https://t.me/holonobot" target="_blank" rel="noopener" class="btn-tg">
+        <i data-lucide="send" style="width:20px;height:20px;color:#050505;"></i>
+       
+      </a>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════ -->
+  <footer id="contact" class="relative z-10 border-t" style="border-color:rgba(255,255,255,0.06);">
+    <div class="max-w-6xl mx-auto px-5 py-12 flex flex-col md:flex-row justify-between items-center gap-8">
+
+      <!-- Brand -->
+      <div class="text-center md:text-left">
+        <div class="flex items-center justify-center md:justify-start gap-3 mb-3">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+               style="background: linear-gradient(135deg,#00FF85 0%,#00a855 100%);">
+            <i data-lucide="leaf" style="width:15px;height:15px;color:#050505;"></i>
+          </div>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;">Plan<span class="text-mint">date</span></span>
+        </div>
+        <p style="font-size:0.78rem;color:rgba(255,255,255,0.3);">Powered by Plandate Ecosystem</p>
+      </div>
+
+      <!-- Links -->
+      <div class="flex flex-wrap justify-center gap-6" style="font-size:0.85rem;color:rgba(255,255,255,0.4);">
+        <a href="https://t.me/holonobot" target="_blank" rel="noopener"
+           class="hover:text-white transition-colors flex items-center gap-2">
+          <i data-lucide="send" style="width:14px;height:14px;"></i>@holonobot
+        </a>
+        <a href="mailto:hello@plandate.app"
+           class="hover:text-white transition-colors flex items-center gap-2">
+          <i data-lucide="mail" style="width:14px;height:14px;"></i>hello@plandate.app
+        </a>
+      </div>
+
+      <!-- Copyright -->
+      <p style="font-size:0.75rem;color:rgba(255,255,255,0.2);">
+        © 2026 Plandate. Все права защищены.
+      </p>
+
+    </div>
+  </footer>
+
+  <!-- ════════════════════════════════════════════
+       SCRIPTS
+  ════════════════════════════════════════════ -->
+  <script>
+    // Init Lucide icons after DOM ready
+    document.addEventListener('DOMContentLoaded', function () {
+      lucide.createIcons();
+    });
+  </script>
+
+</body>
+</html>
+
