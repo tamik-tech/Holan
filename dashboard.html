@@ -104,100 +104,106 @@
     </div>
   </main>
 
-  <script>
-    lucide.createIcons();
+ <script>
+  lucide.createIcons();
 
-    const ctx = document.getElementById('yieldChart').getContext('2d');
-    
-    // Градиент для заливки
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(0, 255, 133, 0.2)');
-    gradient.addColorStop(1, 'rgba(0, 255, 133, 0)');
+  const ctx = document.getElementById('yieldChart').getContext('2d');
+  
+  const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+  gradient.addColorStop(0, 'rgba(0, 255, 133, 0.2)');
+  gradient.addColorStop(1, 'rgba(0, 255, 133, 0)');
 
-    const yieldChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['Май', 'Июнь', 'Июль', 'Авг', 'Прогноз'],
-        datasets: [{
-          label: 'Урожайность',
-          // Начальные адекватные данные, чтобы не было нуля
-          data: [5.2, 12.8, 24.5, 26.0, 28.4],
-          borderColor: '#00FF85',
-          borderWidth: 3,
-          backgroundColor: gradient,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          pointBackgroundColor: '#00FF85',
-          pointBorderColor: '#050505',
-          pointBorderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { 
-            min: 0, 
-            max: 50, 
-            grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, 
-            ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } } 
-          },
-          x: { 
-            grid: { display: false }, 
-            ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } } 
-          }
+  const yieldChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Май (Посев)', 'Июнь (Рост)', 'Июль (Цветение)', 'Авг (Созревание)', 'Прогноз (Сбор)'],
+      datasets: [{
+        label: 'Урожайность',
+        data: [2.0, 8.5, 18.0, 26.0, 28.4], // Начальные значения
+        borderColor: '#00FF85',
+        borderWidth: 3,
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 6,
+        pointBackgroundColor: '#00FF85',
+        pointBorderColor: '#050505',
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { 
+          min: 0, 
+          max: 50, 
+          grid: { color: 'rgba(255,255,255,0.03)' }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } } 
+        },
+        x: { 
+          grid: { display: false }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } } 
         }
       }
-    });
-
-    function updateDashboard() {
-      const temp = parseFloat(document.getElementById('inputTemp').value);
-      const hum = parseFloat(document.getElementById('inputHum').value);
-      const nitro = parseFloat(document.getElementById('inputNitro').value);
-
-      document.getElementById('lblTemp').innerText = temp + '°C';
-      document.getElementById('lblHum').innerText = hum + '%';
-      document.getElementById('lblNitro').innerText = nitro + '%';
-
-      // Логика расчета (Max 40)
-      let kTemp = 1.0 - Math.abs(24 - temp) * 0.035;
-      let kHum = 1.0 - Math.abs(65 - hum) * 0.018;
-      let currentYield = (nitro * 0.4) * Math.max(0.1, kTemp) * Math.max(0.1, kHum);
-      
-      currentYield = Math.max(0, Math.min(40, currentYield));
-
-      // Обновляем текст
-      document.getElementById('yieldDisplay').innerHTML = currentYield.toFixed(1) + ' <span class="text-xl font-normal text-white/20 uppercase">ц/га</span>';
-
-      // ОБНОВЛЕНИЕ ГРАФИКА:
-      // Оставляем Май-Июль как исторические данные, меняем только Август и Прогноз
-      yieldChart.data.datasets[0].data[3] = parseFloat((currentYield * 0.92).toFixed(1)); // Август чуть ниже прогноза
-      yieldChart.data.datasets[0].data[4] = parseFloat(currentYield.toFixed(1)); // Прогноз
-      yieldChart.update();
-
-      // Эффективность и статус
-      let eff = Math.round(Math.max(0, (kTemp * kHum) * 100));
-      document.getElementById('effVal').innerText = eff + '%';
-
-      const risk = document.getElementById('riskVal');
-      const tag = document.getElementById('statusTag');
-
-      if (eff > 75) {
-        risk.innerText = "Low"; risk.className = "text-xl font-bold text-mint";
-        tag.innerText = "Optimal"; tag.className = "px-3 py-1 rounded-full border border-mint/20 text-mint text-[10px] font-bold uppercase";
-      } else if (eff > 40) {
-        risk.innerText = "Medium"; risk.className = "text-xl font-bold text-yellow-500";
-        tag.innerText = "Warning"; tag.className = "px-3 py-1 rounded-full border border-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase";
-      } else {
-        risk.innerText = "High"; risk.className = "text-xl font-bold text-red-500";
-        tag.innerText = "Danger"; tag.className = "px-3 py-1 rounded-full border border-red-500/20 text-red-500 text-[10px] font-bold uppercase";
-      }
     }
+  });
 
-    window.onload = updateDashboard;
-  </script>
+  function updateDashboard() {
+    const temp = parseFloat(document.getElementById('inputTemp').value);
+    const hum = parseFloat(document.getElementById('inputHum').value);
+    const nitro = parseFloat(document.getElementById('inputNitro').value);
+
+    document.getElementById('lblTemp').innerText = temp + '°C';
+    document.getElementById('lblHum').innerText = hum + '%';
+    document.getElementById('lblNitro').innerText = nitro + '%';
+
+    // Математика коэффициентов
+    let kTemp = 1.0 - Math.abs(24 - temp) * 0.035;
+    let kHum = 1.0 - Math.abs(65 - hum) * 0.018;
+    let currentYield = (nitro * 0.4) * Math.max(0.1, kTemp) * Math.max(0.1, kHum);
+    currentYield = Math.max(0.5, Math.min(40, currentYield));
+
+    // Обновляем текст
+    document.getElementById('yieldDisplay').innerHTML = currentYield.toFixed(1) + ' <span class="text-xl font-normal text-white/20 uppercase">ц/га</span>';
+
+    // ДИНАМИКА ГРАФИКА (Фазы роста):
+    // Май и Июнь - база (почти не меняются)
+    yieldChart.data.datasets[0].data[0] = 2.5; 
+    yieldChart.data.datasets[0].data[1] = 8.0;
+    
+    // Июль (Фаза цветения) - начинает зависеть от условий на 50%
+    yieldChart.data.datasets[0].data[2] = parseFloat((currentYield * 0.6).toFixed(1));
+    
+    // Август (Налив зерна) - зависит на 85%
+    yieldChart.data.datasets[0].data[3] = parseFloat((currentYield * 0.88).toFixed(1));
+    
+    // Сентябрь (Прогноз сбора) - полная зависимость
+    yieldChart.data.datasets[0].data[4] = parseFloat(currentYield.toFixed(1));
+    
+    yieldChart.update();
+
+    // Обновление виджетов эффективности
+    let eff = Math.round(Math.max(0, (kTemp * kHum) * 100));
+    document.getElementById('effVal').innerText = eff + '%';
+    const risk = document.getElementById('riskVal');
+    const tag = document.getElementById('statusTag');
+
+    if (eff > 75) {
+      risk.innerText = "Low"; risk.style.color = "#00FF85";
+      tag.innerText = "Optimal"; tag.className = "px-3 py-1 rounded-full border border-mint/20 text-mint text-[10px] font-bold uppercase";
+    } else if (eff > 40) {
+      risk.innerText = "Medium"; risk.style.color = "#fbbf24";
+      tag.innerText = "Warning"; tag.className = "px-3 py-1 rounded-full border border-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase";
+    } else {
+      risk.innerText = "High"; risk.style.color = "#ef4444";
+      tag.innerText = "Danger"; tag.className = "px-3 py-1 rounded-full border border-red-500/20 text-red-500 text-[10px] font-bold uppercase";
+    }
+  }
+
+  window.onload = updateDashboard;
+</script>
+ 
 </body>
 </html>
