@@ -58,6 +58,14 @@
             </div>
           </div>
         </div>
+
+        <div class="glass p-6 border-[#00FF85]/20">
+          <div class="text-[10px] text-[#00FF85] mb-2 uppercase font-bold">Holo Engine Logic</div>
+          <p class="text-[11px] text-white/40 leading-relaxed italic">
+            Расчет производится по формуле: <br>
+            Y = (N * K_temp * K_hum) / 2.5
+          </p>
+        </div>
       </aside>
 
       <main class="lg:col-span-8 space-y-6">
@@ -65,8 +73,7 @@
           <div class="flex justify-between items-start mb-10">
             <div>
               <p class="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Прогноз урожайности</p>
-            <h2 id="yieldDisplay" class="font-display font-black text-5xl text-[#00FF85]">
-                154 <span class="text-xl font-normal text-white/20 uppercase">ц/га</span></h2>
+              <h2 id="yieldDisplay" class="font-display font-black text-5xl text-[#00FF85]">15.4 <span class="text-xl font-normal text-white/20 uppercase">т/га</span></h2>
             </div>
             <div class="text-right">
               <span id="statusTag" class="px-3 py-1 rounded-full border border-[#00FF85]/30 text-[#00FF85] text-[10px] font-bold uppercase">Optimal</span>
@@ -127,53 +134,37 @@
       }
     });
 
-   // В настройках графика измени max с 40 на 400
-scales: {
-  y: { 
-    min: 0, 
-    max: 400, // Увеличили шкалу для центнеров
-    grid: { color: 'rgba(255,255,255,0.05)' }, 
-    ticks: { color: '#444' } 
-  },
-  x: { grid: { display: false }, ticks: { color: '#444' } }
-}
+    function updateDashboard() {
+      // 1. Получаем данные
+      const t = parseFloat(document.getElementById('inputTemp').value);
+      const h = parseFloat(document.getElementById('inputHum').value);
+      const n = parseFloat(document.getElementById('inputNitrogen').value);
 
-function updateDashboard() {
-  const t = parseFloat(document.getElementById('inputTemp').value);
-  const h = parseFloat(document.getElementById('inputHum').value);
-  const n = parseFloat(document.getElementById('inputNitrogen').value);
+      // 2. Обновляем подписи ползунков
+      document.getElementById('lblTemp').innerText = t + '°C';
+      document.getElementById('lblHum').innerText = h + '%';
+      document.getElementById('lblNitro').innerText = n + '%';
 
-  // Подписи ползунков
-  document.getElementById('lblTemp').innerText = t + '°C';
-  document.getElementById('lblHum').innerText = h + '%';
-  document.getElementById('lblNitro').innerText = n + '%';
+      // 3. МАТЕМАТИЧЕСКИЙ РАСЧЕТ (Имитация ядра C#)
+      // Коэффициент температуры (идеально 22-26 градусов)
+      let kTemp = 1.0 - Math.abs(24 - t) * 0.03;
+      // Коэффициент влажности (идеально 60-70%)
+      let kHum = 1.0 - Math.abs(65 - h) * 0.015;
+      
+      // Итоговый расчет урожайности (макс 40 т/га)
+      let finalYield = (n * 0.4) * kTemp * kHum;
+      
+      // Ограничиваем лимиты (от 0.1 до 40)
+      finalYield = Math.max(0.1, Math.min(40, finalYield));
 
-  // МАТЕМАТИКА В ЦЕНТНЕРАХ
-  let kTemp = 1.0 - Math.abs(24 - t) * 0.03;
-  let kHum = 1.0 - Math.abs(65 - h) * 0.015;
-  
-  // Рассчитываем значение (теперь умножаем на 4, а не на 0.4, чтобы получить центнеры)
-  let finalYield = (n * 4) * kTemp * kHum;
-  
-  // Ограничиваем лимиты (от 1 до 400 ц/га)
-  finalYield = Math.max(1, Math.min(400, finalYield));
+      // 4. ОБНОВЛЕНИЕ UI
+      const display = document.getElementById('yieldDisplay');
+      display.innerHTML = finalYield.toFixed(1) + ' <span class="text-xl font-normal text-white/20 uppercase">т/га</span>';
 
-  // ВЫВОД РЕЗУЛЬТАТА
-  const display = document.getElementById('yieldDisplay');
-  // Выводим целое число (центнеры редко пишут с дробью, но можно оставить .toFixed(1))
-  display.innerHTML = finalYield.toFixed(0) + ' <span class="text-xl font-normal text-white/20 uppercase">ц/га</span>';
-
-  // Обновление графика
-  yieldChart.data.datasets[0].data[5] = finalYield.toFixed(0);
-  yieldChart.data.datasets[0].data[4] = (finalYield * 0.85).toFixed(0);
-  yieldChart.update('none');
-
-  // Эффективность (оставляем в процентах)
-  let efficiency = Math.round((kTemp * kHum) * 100);
-  document.getElementById('effVal').innerText = efficiency + '%';
-  
-  // ... логика риск-статусов (оставляем как была) ...
-}
+      // Обновление графика
+      yieldChart.data.datasets[0].data[5] = finalYield.toFixed(1);
+      yieldChart.data.datasets[0].data[4] = (finalYield * 0.85).toFixed(1);
+      yieldChart.update('none'); // 'none' для плавной работы без лишних анимаций
 
       // Расчет эффективности и рисков
       let efficiency = Math.round((kTemp * kHum) * 100);
