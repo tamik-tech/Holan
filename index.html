@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="description" content="Holo — AI-агент для прозрачности агросектора. Мониторинг, NDVI-аналитика и умный календарь Plandate на базе Gemini и C# .NET." />
   <title>Plandate · Holo AI</title>
 
@@ -254,36 +254,40 @@
   <!-- ════════════════════════════════════════════
        HEADER
   ════════════════════════════════════════════ -->
-  <header class="relative z-10 fade-in">
-    <div class="max-w-6xl mx-auto px-5 py-5 flex items-center justify-between">
+<header class="relative z-50 fade-in">
+  <div class="max-w-6xl mx-auto px-5 py-5 flex items-center justify-between">
 
-      <!-- Logo -->
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl flex items-center justify-center"
-             style="background: linear-gradient(135deg,#00FF85 0%,#00a855 100%);">
-          <i data-lucide="leaf" class="text-obsidian" style="width:18px;height:18px;color:#050505;"></i>
-        </div>
-        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.15rem;letter-spacing:0.04em;">
-          Plan<span class="text-mint">date</span>
-        </span>
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(0,255,133,0.3)]"
+           style="background: linear-gradient(135deg,#00FF85 0%,#00a855 100%);">
+        <i data-lucide="leaf" class="text-obsidian" style="width:18px;height:18px;color:#050505;"></i>
       </div>
+      <span class="font-display font-bold text-xl tracking-tight">
+        Plan<span class="text-mint">date</span>
+      </span>
+    </div>
 
-      <!-- Nav links (hidden on mobile) -->
-      <nav class="hidden md:flex items-center gap-7 text-sm" style="color:rgba(255,255,255,0.5);">
-  <a href="index.html" class="text-white font-semibold">Главная</a>
-  
-  <a href="dashboard.html" class="hover:text-white transition-colors">Аналитика</a>
-  
-  <a href="#contact" class="hover:text-white transition-colors">Контакты</a>
-</nav>
+    <nav class="hidden md:flex items-center gap-8 text-sm text-white/50">
+      <a href="index.html" class="text-white font-semibold">Главная</a>
+      <a href="dashboard.html" class="hover:text-white transition-colors">Аналитика</a>
+      <a href="#contact" class="hover:text-white transition-colors">Контакты</a>
+    </nav>
 
-      <!-- CTA -->
-      <a href="https://t.me/holonobot" target="_blank" rel="noopener" class="btn-outline">
-        <i data-lucide="send" style="width:14px;height:14px;"></i>
-        Launch App
+    <div class="flex md:hidden items-center gap-2">
+      <a href="dashboard.html" class="w-11 h-11 flex items-center justify-center bg-mint/10 border border-mint/20 rounded-xl active:scale-95 transition-transform">
+        <i data-lucide="bar-chart-3" class="text-mint w-5 h-5"></i>
+      </a>
+      <a href="#contact" class="w-11 h-11 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl active:scale-95 transition-transform">
+        <i data-lucide="mail" class="text-white/70 w-5 h-5"></i>
       </a>
     </div>
-  </header>
+
+    <a href="https://t.me/holonobot" target="_blank" rel="noopener" class="hidden md:btn-outline md:inline-flex">
+      <i data-lucide="send" style="width:14px;height:14px;"></i>
+      Launch App
+    </a>
+  </div>
+</header>
 
   <!-- ════════════════════════════════════════════
        HERO
