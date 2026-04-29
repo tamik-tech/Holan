@@ -2,8 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Engine · PlanDate Analytics</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Analytics · PlanDace Holo AI</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,115 +13,109 @@
   <style>
     body { background: #050505; color: #e8ede9; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
     .glass { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,255,133,0.1); backdrop-filter: blur(20px); border-radius: 24px; }
-    .input-field { background: rgba(255,255,255,0.03); border: 1px solid rgba(0,255,133,0.15); border-radius: 12px; padding: 10px; color: #00FF85; width: 100%; outline: none; transition: 0.3s; }
-    .input-field:focus { border-color: #00FF85; background: rgba(0,255,133,0.05); }
-    input[type=range] { accent-color: #00FF85; }
+    input[type=range] { accent-color: #00FF85; cursor: pointer; }
+    .fade-in { opacity: 0; transform: translateY(10px); animation: fadeIn 0.6s forwards; }
+    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="p-6">
+<body class="pb-10">
 
-  <div class="max-w-6xl mx-auto">
-    <header class="flex justify-between items-center mb-10">
+  <header class="relative z-50 max-w-6xl mx-auto px-5 py-6">
+    <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-[#00FF85] flex items-center justify-center shadow-[0_0_15px_rgba(0,255,133,0.4)]">
+        <div class="w-8 h-8 rounded-lg bg-[#00FF85] flex items-center justify-center">
           <i data-lucide="leaf" class="text-black w-4 h-4"></i>
         </div>
-        <span class="font-display font-bold text-xl tracking-tight">Plan<span class="text-[#00FF85]">date</span></span>
+        <span class="font-display font-bold text-xl tracking-tight text-white">Plan<span class="text-[#00FF85]">dace</span></span>
       </div>
-      <a href="index.html" class="text-sm text-white/40 hover:text-white transition-colors">Вернуться на главную</a>
-    </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      
-      <aside class="lg:col-span-4 space-y-6">
-        <div class="glass p-8">
-          <h3 class="font-display font-bold text-lg mb-6 flex items-center gap-2">
-            <i data-lucide="settings-2" class="w-4 h-4 text-[#00FF85]"></i> Входные параметры
-          </h3>
-          
-          <div class="space-y-6">
-            <div>
-              <label class="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">Температура воздуха (°C)</label>
-              <input type="range" id="inputTemp" min="0" max="50" value="25" class="w-full" oninput="updateDashboard()">
-              <div class="flex justify-between text-[10px] mt-1 text-[#00FF85]/60"><span id="lblTemp">25°C</span></div>
-            </div>
+      <nav class="hidden md:flex items-center gap-8 text-sm text-white/40">
+        <a href="index.html" class="hover:text-white transition-colors">Главная</a>
+        <a href="#" class="text-[#00FF85]">Аналитика</a>
+      </nav>
 
-            <div>
-              <label class="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">Влажность почвы (%)</label>
-              <input type="range" id="inputHum" min="0" max="100" value="60" class="w-full" oninput="updateDashboard()">
-              <div class="flex justify-between text-[10px] mt-1 text-[#00FF85]/60"><span id="lblHum">60%</span></div>
-            </div>
-
-            <div>
-              <label class="text-[10px] uppercase tracking-widest text-white/30 mb-2 block">Уровень Азота (N, %)</label>
-              <input type="range" id="inputNitrogen" min="0" max="100" value="70" class="w-full" oninput="updateDashboard()">
-              <div class="flex justify-between text-[10px] mt-1 text-[#00FF85]/60"><span id="lblNitro">70%</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="glass p-6 border-[#00FF85]/20">
-          <div class="text-[10px] text-[#00FF85] mb-2 uppercase font-bold">Holo Engine Logic</div>
-          <p class="text-[11px] text-white/40 leading-relaxed italic">
-            Расчет производится по формуле: <br>
-            Y = (N * K_temp * K_hum) / 2.5
-          </p>
-        </div>
-      </aside>
-
-      <main class="lg:col-span-8 space-y-6">
-        <div class="glass p-8 relative overflow-hidden">
-          <div class="flex justify-between items-start mb-10">
-            <div>
-              <p class="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Прогноз урожайности</p>
-              <h2 id="yieldDisplay" class="font-display font-black text-5xl text-[#00FF85]">15.4 <span class="text-xl font-normal text-white/20 uppercase">т/га</span></h2>
-            </div>
-            <div class="text-right">
-              <span id="statusTag" class="px-3 py-1 rounded-full border border-[#00FF85]/30 text-[#00FF85] text-[10px] font-bold uppercase">Optimal</span>
-            </div>
-          </div>
-
-          <div class="h-[300px]">
-            <canvas id="yieldChart"></canvas>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-4">
-            <div class="glass p-4 text-center">
-                <div class="text-[9px] uppercase text-white/30 mb-1">Эффективность</div>
-                <div id="effVal" class="text-lg font-bold">84%</div>
-            </div>
-            <div class="glass p-4 text-center">
-                <div class="text-[9px] uppercase text-white/30 mb-1">Риск стресса</div>
-                <div id="riskVal" class="text-lg font-bold text-yellow-500">Low</div>
-            </div>
-            <div class="glass p-4 text-center">
-                <div class="text-[9px] uppercase text-white/30 mb-1">Цикл роста</div>
-                <div class="text-lg font-bold">Этап 4</div>
-            </div>
-        </div>
-      </main>
-
+      <div class="flex md:hidden gap-2">
+        <a href="index.html" class="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl">
+          <i data-lucide="home" class="w-5 h-5 text-white"></i>
+        </a>
+      </div>
     </div>
-  </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-5 grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
+    
+    <aside class="lg:col-span-4 space-y-6 fade-in">
+      <div class="glass p-6">
+        <h3 class="text-sm font-bold uppercase tracking-widest text-white/50 mb-6 flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4 text-mint"></i> Параметры
+        </h3>
+        
+        <div class="space-y-8">
+          <div>
+            <label class="text-[10px] uppercase text-white/30 mb-3 block">Температура (°C)</label>
+            <input type="range" id="inputTemp" min="0" max="50" value="24" class="w-full" oninput="updateDashboard()">
+            <div id="lblTemp" class="text-mint text-xs mt-2 font-bold">24°C</div>
+          </div>
+
+          <div>
+            <label class="text-[10px] uppercase text-white/30 mb-3 block">Влажность (%)</label>
+            <input type="range" id="inputHum" min="0" max="100" value="65" class="w-full" oninput="updateDashboard()">
+            <div id="lblHum" class="text-mint text-xs mt-2 font-bold">65%</div>
+          </div>
+
+          <div>
+            <label class="text-[10px] uppercase text-white/30 mb-3 block">Азот в почве (N, %)</label>
+            <input type="range" id="inputNitro" min="0" max="100" value="75" class="w-full" oninput="updateDashboard()">
+            <div id="lblNitro" class="text-mint text-xs mt-2 font-bold">75%</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="lg:col-span-8 space-y-6 fade-in" style="animation-delay: 0.2s">
+      <div class="glass p-8">
+        <div class="mb-8">
+          <p class="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Ожидаемый сбор</p>
+          <h2 id="yieldDisplay" class="font-display font-black text-5xl text-[#00FF85]">185 <span class="text-xl font-normal text-white/20 uppercase">ц/га</span></h2>
+        </div>
+        
+        <div class="h-[300px]">
+          <canvas id="yieldChart"></canvas>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div class="glass p-5">
+          <div class="text-[9px] uppercase text-white/30 mb-1">Эффективность</div>
+          <div id="effVal" class="text-xl font-bold">94%</div>
+        </div>
+        <div class="glass p-5">
+          <div class="text-[9px] uppercase text-white/30 mb-1">Статус</div>
+          <div id="statusVal" class="text-xl font-bold text-mint">Optimal</div>
+        </div>
+      </div>
+    </div>
+  </main>
 
   <script>
+    // Инициализация иконок
     lucide.createIcons();
 
-    // Инициализация графика
+    // Создание графика
     const ctx = document.getElementById('yieldChart').getContext('2d');
-    let yieldChart = new Chart(ctx, {
+    const yieldChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: ['Этап 1', 'Этап 2', 'Этап 3', 'Этап 4', 'Этап 5', 'Прогноз'],
+        labels: ['Май', 'Июнь', 'Июль', 'Авг', 'Прогноз'],
         datasets: [{
-          data: [2, 5, 9, 12, 14, 15.4],
+          data: [40, 90, 140, 165, 185],
           borderColor: '#00FF85',
-          borderWidth: 4,
+          borderWidth: 3,
           backgroundColor: 'rgba(0, 255, 133, 0.05)',
           fill: true,
           tension: 0.4,
-          pointRadius: 0
+          pointRadius: 4,
+          pointBackgroundColor: '#00FF85'
         }]
       },
       options: {
@@ -128,74 +123,50 @@
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { min: 0, max: 40, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#444' } },
-          x: { grid: { display: false }, ticks: { color: '#444' } }
+          y: { min: 0, max: 400, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#555' } },
+          x: { grid: { display: false }, ticks: { color: '#555' } }
         }
       }
     });
 
     function updateDashboard() {
-      // 1. Получаем данные
-      const t = parseFloat(document.getElementById('inputTemp').value);
-      const h = parseFloat(document.getElementById('inputHum').value);
-      const n = parseFloat(document.getElementById('inputNitrogen').value);
+      // Получаем значения
+      const temp = parseFloat(document.getElementById('inputTemp').value);
+      const hum = parseFloat(document.getElementById('inputHum').value);
+      const nitro = parseFloat(document.getElementById('inputNitro').value);
 
-      // 2. Обновляем подписи ползунков
-      document.getElementById('lblTemp').innerText = t + '°C';
-      document.getElementById('lblHum').innerText = h + '%';
-      document.getElementById('lblNitro').innerText = n + '%';
+      // Обновляем текст под ползунками
+      document.getElementById('lblTemp').innerText = temp + '°C';
+      document.getElementById('lblHum').innerText = hum + '%';
+      document.getElementById('lblNitro').innerText = nitro + '%';
 
-      // 3. МАТЕМАТИЧЕСКИЙ РАСЧЕТ (Имитация ядра C#)
-      // Коэффициент температуры (идеально 22-26 градусов)
-      let kTemp = 1.0 - Math.abs(24 - t) * 0.03;
-      // Коэффициент влажности (идеально 60-70%)
-      let kHum = 1.0 - Math.abs(65 - h) * 0.015;
+      // Математика (Расчет в Центнерах)
+      let kTemp = 1.0 - Math.abs(24 - temp) * 0.035;
+      let kHum = 1.0 - Math.abs(65 - hum) * 0.015;
+      let result = (nitro * 3.8) * kTemp * kHum; // 3.8 — коэффициент для ц/га
       
-      // Итоговый расчет урожайности (макс 40 т/га)
-      let finalYield = (n * 0.4) * kTemp * kHum;
+      result = Math.max(5, Math.min(400, result)); // Лимиты
+
+      // Вывод на экран
+      document.getElementById('yieldDisplay').innerHTML = Math.round(result) + ' <span class="text-xl font-normal text-white/20 uppercase">ц/га</span>';
       
-      // Ограничиваем лимиты (от 0.1 до 40)
-      finalYield = Math.max(0.1, Math.min(40, finalYield));
+      // Обновление графика (последняя точка)
+      yieldChart.data.datasets[0].data[4] = Math.round(result);
+      yieldChart.data.datasets[0].data[3] = Math.round(result * 0.88);
+      yieldChart.update('none');
 
-      // 4. ОБНОВЛЕНИЕ UI
-      const display = document.getElementById('yieldDisplay');
-      display.innerHTML = finalYield.toFixed(1) + ' <span class="text-xl font-normal text-white/20 uppercase">т/га</span>';
-
-      // Обновление графика
-      yieldChart.data.datasets[0].data[5] = finalYield.toFixed(1);
-      yieldChart.data.datasets[0].data[4] = (finalYield * 0.85).toFixed(1);
-      yieldChart.update('none'); // 'none' для плавной работы без лишних анимаций
-
-      // Расчет эффективности и рисков
-      let efficiency = Math.round((kTemp * kHum) * 100);
-      document.getElementById('effVal').innerText = efficiency + '%';
-
-      const risk = document.getElementById('riskVal');
-      const status = document.getElementById('statusTag');
+      // Статус и эффективность
+      let eff = Math.round(Math.max(0, (kTemp * kHum) * 100));
+      document.getElementById('effVal').innerText = eff + '%';
       
-      if (efficiency < 50 || t > 38 || h < 20) {
-          risk.innerText = "CRITICAL";
-          risk.className = "text-lg font-bold text-red-500";
-          status.innerText = "Danger";
-          status.style.borderColor = "#ef4444";
-          status.style.color = "#ef4444";
-      } else if (efficiency < 75) {
-          risk.innerText = "Medium";
-          risk.className = "text-lg font-bold text-yellow-500";
-          status.innerText = "Warning";
-          status.style.borderColor = "#f59e0b";
-          status.style.color = "#f59e0b";
-      } else {
-          risk.innerText = "Low";
-          risk.className = "text-lg font-bold text-[#00FF85]";
-          status.innerText = "Optimal";
-          status.style.borderColor = "#00FF85";
-          status.style.color = "#00FF85";
-      }
+      const status = document.getElementById('statusVal');
+      if (eff > 80) { status.innerText = "Optimal"; status.className = "text-xl font-bold text-mint"; }
+      else if (eff > 50) { status.innerText = "Normal"; status.className = "text-xl font-bold text-yellow-500"; }
+      else { status.innerText = "Risk"; status.className = "text-xl font-bold text-red-500"; }
     }
 
-    // Запускаем расчет при загрузке
-    updateDashboard();
+    // Первый запуск при загрузке
+    window.onload = updateDashboard;
   </script>
 </body>
 </html>
