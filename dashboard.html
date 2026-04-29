@@ -16,9 +16,6 @@
     input[type=range] { accent-color: #00FF85; cursor: pointer; height: 6px; }
     .fade-in { opacity: 0; transform: translateY(10px); animation: fadeIn 0.6s forwards; }
     @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
-    
-    /* Стили для мобильных кнопок */
-    .mobile-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
   </style>
 </head>
 <body class="pb-10">
@@ -31,17 +28,15 @@
         </div>
         <span class="font-display font-bold text-xl tracking-tight text-white">Plan<span class="text-[#00FF85]">dace</span></span>
       </div>
-
+      <div class="flex md:hidden">
+        <a href="index.html" class="w-11 h-11 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl">
+          <i data-lucide="home" class="w-5 h-5 text-white"></i>
+        </a>
+      </div>
       <nav class="hidden md:flex items-center gap-8 text-sm text-white/40">
         <a href="index.html" class="hover:text-white transition-colors">Главная</a>
         <a href="#" class="text-[#00FF85]">Аналитика</a>
       </nav>
-
-      <div class="flex md:hidden">
-        <a href="index.html" class="mobile-btn">
-          <i data-lucide="home" class="w-5 h-5 text-white"></i>
-        </a>
-      </div>
     </div>
   </header>
 
@@ -79,12 +74,6 @@
           </div>
         </div>
       </div>
-
-      <div class="glass p-5 border-[#00FF85]/10">
-        <p class="text-[10px] text-white/30 leading-relaxed uppercase tracking-tighter">
-          Модель расчета: <span class="text-white/60 text-[11px]">Max Yield Cap 40 ц/га</span>
-        </p>
-      </div>
     </aside>
 
     <div class="lg:col-span-8 space-y-6 fade-in" style="animation-delay: 0.15s">
@@ -92,22 +81,20 @@
         <div class="flex justify-between items-start mb-10">
           <div>
             <p class="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Прогноз урожайности</p>
-            <h2 id="yieldDisplay" class="font-display font-black text-5xl text-[#00FF85]">0.0 <span class="text-xl font-normal text-white/20 uppercase">ц/га</span></h2>
+            <h2 id="yieldDisplay" class="font-display font-black text-5xl text-[#00FF85]">28.4 <span class="text-xl font-normal text-white/20 uppercase">ц/га</span></h2>
           </div>
-          <div id="statusTag" class="px-3 py-1 rounded-full border border-mint/20 text-mint text-[10px] font-bold uppercase">
-            Optimal
-          </div>
+          <div id="statusTag" class="px-3 py-1 rounded-full border border-mint/20 text-mint text-[10px] font-bold uppercase">Optimal</div>
         </div>
         
-        <div class="h-[320px]">
+        <div class="h-[350px]">
           <canvas id="yieldChart"></canvas>
         </div>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <div class="glass p-5">
           <div class="text-[9px] uppercase text-white/30 mb-1">Эффективность</div>
-          <div id="effVal" class="text-xl font-bold">0%</div>
+          <div id="effVal" class="text-xl font-bold text-white">94%</div>
         </div>
         <div class="glass p-5">
           <div class="text-[9px] uppercase text-white/30 mb-1">Риск стресса</div>
@@ -120,22 +107,31 @@
   <script>
     lucide.createIcons();
 
-    // Настройка графика
     const ctx = document.getElementById('yieldChart').getContext('2d');
+    
+    // Градиент для заливки
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(0, 255, 133, 0.2)');
+    gradient.addColorStop(1, 'rgba(0, 255, 133, 0)');
+
     const yieldChart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: ['Май', 'Июнь', 'Июль', 'Авг', 'Прогноз'],
         datasets: [{
-          data: [5, 12, 22, 28, 30],
+          label: 'Урожайность',
+          // Начальные адекватные данные, чтобы не было нуля
+          data: [5.2, 12.8, 24.5, 26.0, 28.4],
           borderColor: '#00FF85',
           borderWidth: 3,
-          backgroundColor: 'rgba(0, 255, 133, 0.05)',
+          backgroundColor: gradient,
           fill: true,
           tension: 0.4,
-          pointRadius: 4,
+          pointRadius: 6,
+          pointHoverRadius: 8,
           pointBackgroundColor: '#00FF85',
-          pointBorderColor: '#050505'
+          pointBorderColor: '#050505',
+          pointBorderWidth: 2
         }]
       },
       options: {
@@ -145,67 +141,62 @@
         scales: {
           y: { 
             min: 0, 
-            max: 50, // Шкала до 50, чтобы 40 ц/га смотрелось красиво
-            grid: { color: 'rgba(255,255,255,0.03)' }, 
-            ticks: { color: '#444', font: { size: 10 } } 
+            max: 50, 
+            grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, 
+            ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } } 
           },
-          x: { grid: { display: false }, ticks: { color: '#444', font: { size: 10 } } }
+          x: { 
+            grid: { display: false }, 
+            ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } } 
+          }
         }
       }
     });
 
     function updateDashboard() {
-      // 1. Получаем входные данные
       const temp = parseFloat(document.getElementById('inputTemp').value);
       const hum = parseFloat(document.getElementById('inputHum').value);
       const nitro = parseFloat(document.getElementById('inputNitro').value);
 
-      // 2. Обновляем текст в интерфейсе
       document.getElementById('lblTemp').innerText = temp + '°C';
       document.getElementById('lblHum').innerText = hum + '%';
       document.getElementById('lblNitro').innerText = nitro + '%';
 
-      // 3. МАТЕМАТИКА (Лимиты: 0 - 40 ц/га)
-      // Температурный коэффициент (Пик на 24 градусах)
-      let kTemp = 1.0 - Math.abs(24 - temp) * 0.04; 
-      // Влажность (Пик на 65%)
-      let kHum = 1.0 - Math.abs(65 - hum) * 0.02;
-
-      // Базовая урожайность: Азот 100% = 40 ц/га
-      let result = (nitro * 0.4) * kTemp * kHum;
-
-      // Финальные ограничения
-      result = Math.max(0, Math.min(40, result));
-
-      // 4. ВЫВОД ДАННЫХ
-      document.getElementById('yieldDisplay').innerHTML = result.toFixed(1) + ' <span class="text-xl font-normal text-white/20 uppercase">ц/га</span>';
+      // Логика расчета (Max 40)
+      let kTemp = 1.0 - Math.abs(24 - temp) * 0.035;
+      let kHum = 1.0 - Math.abs(65 - hum) * 0.018;
+      let currentYield = (nitro * 0.4) * Math.max(0.1, kTemp) * Math.max(0.1, kHum);
       
-      // Обновление графика
-      yieldChart.data.datasets[0].data[4] = parseFloat(result.toFixed(1));
-      yieldChart.data.datasets[0].data[3] = parseFloat((result * 0.85).toFixed(1));
-      yieldChart.update('none');
+      currentYield = Math.max(0, Math.min(40, currentYield));
 
-      // Эффективность
+      // Обновляем текст
+      document.getElementById('yieldDisplay').innerHTML = currentYield.toFixed(1) + ' <span class="text-xl font-normal text-white/20 uppercase">ц/га</span>';
+
+      // ОБНОВЛЕНИЕ ГРАФИКА:
+      // Оставляем Май-Июль как исторические данные, меняем только Август и Прогноз
+      yieldChart.data.datasets[0].data[3] = parseFloat((currentYield * 0.92).toFixed(1)); // Август чуть ниже прогноза
+      yieldChart.data.datasets[0].data[4] = parseFloat(currentYield.toFixed(1)); // Прогноз
+      yieldChart.update();
+
+      // Эффективность и статус
       let eff = Math.round(Math.max(0, (kTemp * kHum) * 100));
       document.getElementById('effVal').innerText = eff + '%';
 
-      // Риски и статусы
       const risk = document.getElementById('riskVal');
       const tag = document.getElementById('statusTag');
 
       if (eff > 75) {
-        risk.innerText = "Low"; risk.style.color = "#00FF85";
-        tag.innerText = "Optimal"; tag.style.color = "#00FF85"; tag.style.borderColor = "rgba(0,255,133,0.3)";
+        risk.innerText = "Low"; risk.className = "text-xl font-bold text-mint";
+        tag.innerText = "Optimal"; tag.className = "px-3 py-1 rounded-full border border-mint/20 text-mint text-[10px] font-bold uppercase";
       } else if (eff > 40) {
-        risk.innerText = "Medium"; risk.style.color = "#fbbf24";
-        tag.innerText = "Warning"; tag.style.color = "#fbbf24"; tag.style.borderColor = "rgba(251,191,36,0.3)";
+        risk.innerText = "Medium"; risk.className = "text-xl font-bold text-yellow-500";
+        tag.innerText = "Warning"; tag.className = "px-3 py-1 rounded-full border border-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase";
       } else {
-        risk.innerText = "High"; risk.style.color = "#ef4444";
-        tag.innerText = "Danger"; tag.style.color = "#ef4444"; tag.style.borderColor = "rgba(239,68,68,0.3)";
+        risk.innerText = "High"; risk.className = "text-xl font-bold text-red-500";
+        tag.innerText = "Danger"; tag.className = "px-3 py-1 rounded-full border border-red-500/20 text-red-500 text-[10px] font-bold uppercase";
       }
     }
 
-    // Инициализация при загрузке
     window.onload = updateDashboard;
   </script>
 </body>
